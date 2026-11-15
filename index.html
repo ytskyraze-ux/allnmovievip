@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!-- © 2026 All N Movie VIP. Sab adhikar surakshit (All rights reserved). Bina ijazat copy ya dobara istemal karna kanooni apradh hai. -->
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Movie Site</title>
+<style>
+:root{--bg:#dcdcdc;--card:#ebebeb;--tx:#111;--mut:#555;--pri:#0a66a0;--link:#0b4fa8;--soft:#dde6f2;--bd:#b9c7d8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:Roboto,Arial,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto}.banner{text-align:center;padding:20px 8px;cursor:pointer;color:#fff}.banner h1{margin:0;font-size:34px}.banner p{margin:2px 0 0;font-size:12px}
+.search{background:var(--pri);padding:8px;display:flex;gap:6px;justify-content:center}.search input{flex:1;max-width:420px;padding:8px;border:1px solid var(--bd);border-radius:4px;font-size:16px}.search button{padding:8px 14px;border-radius:4px;border:1px solid var(--bd);font-size:16px}
+.box{background:var(--card);border:1px solid var(--bd);margin:8px;padding:10px}
+.h{background:var(--soft);color:var(--link);font-weight:700;text-align:center;padding:10px;margin:8px 8px 0;border:1px solid var(--bd);font-size:18px}
+.hb{background:var(--pri);color:#fff;font-weight:700;text-align:center;padding:10px;margin:8px 0 0;font-size:18px}
+.item{display:flex;gap:12px;background:var(--card);margin:0 8px;padding:8px;border-bottom:1px solid var(--bd);cursor:pointer}
+.poster{flex:0 0 84px;height:100px;border-radius:4px;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:30px;background-color:#234}
+.item .t{font-weight:700;font-size:18px;line-height:1.25}.tag{display:inline-block;color:#fff;border-radius:12px;padding:1px 10px;font-size:13px;font-weight:700;margin-top:6px}
+.cats a{display:block;padding:12px 10px;border-bottom:1px solid var(--bd);color:var(--link);font-weight:700;font-size:18px;cursor:pointer;margin:0 8px;background:var(--card)}
+.btn{background:#444;color:#fff;padding:8px 18px;border-radius:5px;border:1px solid #222;font-weight:700;font-size:16px;cursor:pointer}.pg{display:flex;gap:10px;justify-content:center;margin:14px 8px}
+.info{margin:0;background:var(--card)}.info div{padding:9px 10px;border-bottom:1px solid var(--bd)}
+.dl{display:block;margin:10px 18px;padding:15px 8px;text-align:center;color:#fff;font-weight:700;font-size:19px;border-radius:7px;text-decoration:none}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:0 8px}.shot{aspect-ratio:16/9;background-size:cover;background-position:center}
+.crumb{margin:8px;padding:8px;background:var(--soft);font-size:15px;color:var(--mut)}.crumb a{color:var(--link);font-weight:700;cursor:pointer}
+.foot{text-align:center;background:var(--soft);margin:8px;padding:12px;border:1px solid var(--bd);color:var(--mut);font-size:14px}.foot a{color:var(--link);font-weight:700;margin:0 6px;cursor:pointer}
+.empty{text-align:center;padding:20px;color:var(--mut)}
+.watch{background:linear-gradient(90deg,#6a11cb,#e91e8c);border:3px solid #fff;box-shadow:0 0 0 2px #6a11cb,0 6px 16px rgba(106,17,203,.55);font-size:21px;animation:pu 1.6s infinite}@keyframes pu{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea{-webkit-user-select:text;user-select:text}img,.poster,.shot{-webkit-user-drag:none}
+</style></head><body><div class="wrap">
+<div class="banner" id="ban" onclick="location.hash='home'"><h1 id="sn"></h1><p id="tl"></p></div>
+<div class="search"><input id="q" placeholder="Movie search karein..." oninput="page=1;route()"><button onclick="page=1;route()">Search</button></div>
+<div id="app"></div><div class="foot" id="ft"></div></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+/* View panel. Admin (admin.html) isi site ke saath same folder/domain mein rakho. */
+var DEF={name:"All N Movie VIP",tagline:"Latest Bollywood, South Hindi Dubbed & Web Series",heading:"HD Movies & Web Series",tags:"Latest movies aur web series HD mein.",perPage:10,prev:"❮ Previous",next:"Next ❯",dlText:"Download",c1:"#5b0b17",c2:"#12306b",showSearch:true,showCats:true,showTags:true,showDemo:true,watchText:"▶ Video Dekho (Watch Now)",
+ cats:["Animation Movies","Bollywood Hindi Movies","Hollywood Hindi Movies","HQ Dubbed Movies UnCut","HQ Hindi Dub Movie With ads","imdb Top Movies","Japanese Anime","Marvel Hollywood Movies","Punjabi Movies","South Hindi Dubbed Movie","Web Series"],
+ footer:"Privacy Policy|\nContact Us|\nAbout Us|"};
+function J(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}}
+var CFG=Object.assign({},DEF),MOVIES=[],LOADED=false;
+var COL=["#37803f","#d08a00","#c8321a","#2a6fc4","#37803f","#c8321a"],P=["#8a5a00","#1a1ad6","#0b6b2a","#a31cc0","#c4121b"],page=1,cat=null;
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function safe(u){return /^(https?:\/\/|\/uploads\/)/i.test(u||'')?u:'#'}
+function img(u){return /^(data:image\/|https?:\/\/|\/uploads\/)/.test(u||'')?u:''}
+function rnd(s){s=Math.sin(s)*10000;return s-Math.floor(s)}
+function fake(h,s,p){var w=p?300:320,H=p?420:180,t=s%5,hu=(h+s*23)%360,o='';
+ var top='hsl('+hu+',65%,'+(t==3?'12%':'38%')+')',bot='hsl('+((hu+45)%360)+',75%,'+(t==3?'4%':'14%')+')',hz=H*(p?.62:.64);
+ o+='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+top+'"/><stop offset="1" stop-color="'+bot+'"/></linearGradient></defs><rect width="'+w+'" height="'+H+'" fill="url(#g)"/>';
+ if(t==3||t==0)for(var k=0;k<40;k++)o+='<circle cx="'+(rnd(s*9+k)*w)+'" cy="'+(rnd(s*5+k*3)*hz*.8)+'" r="'+(0.6+rnd(k+s)*1.2)+'" fill="#fff" fill-opacity="'+(0.4+rnd(k)*.5)+'"/>';
+ if(t==3)o+='<circle cx="'+(w*.72)+'" cy="'+(H*.2)+'" r="'+(w*.08)+'" fill="#fff4cc"/><circle cx="'+(w*.72)+'" cy="'+(H*.2)+'" r="'+(w*.16)+'" fill="#fff4cc" fill-opacity=".15"/>';
+ if(t==1||t==2||t==4)o+='<circle cx="'+(w*(.25+rnd(s)*.5))+'" cy="'+(hz*.75)+'" r="'+(w*.09)+'" fill="#ffd27a"/><circle cx="'+(w*(.25+rnd(s)*.5))+'" cy="'+(hz*.75)+'" r="'+(w*.2)+'" fill="#ffb347" fill-opacity=".2"/>';
+ if(t==0){for(var b=0,x=0;x<w;b++){var bw=18+rnd(s+b)*34,bh=H*(.22+rnd(s*2+b)*.38);o+='<rect x="'+x+'" y="'+(hz+H*.1-bh)+'" width="'+bw+'" height="'+(bh+H)+'" fill="#05070d"/>';for(var wy=hz+H*.1-bh+8;wy<hz+H*.1;wy+=11)for(var wx=x+4;wx<x+bw-5;wx+=8)if(rnd(wx*3+wy)>.6)o+='<rect x="'+wx+'" y="'+wy+'" width="3" height="4" fill="#ffd86b" fill-opacity=".85"/>';x+=bw+2}}
+ if(t==1||t==3)o+='<polygon points="0,'+hz+' '+(w*.2)+','+(hz-H*.2)+' '+(w*.42)+','+hz+' '+(w*.65)+','+(hz-H*.26)+' '+(w*.9)+','+hz+' '+w+','+(hz-H*.1)+' '+w+','+H+' 0,'+H+'" fill="#0a1018" fill-opacity=".85"/>';
+ if(t==2)o+='<path d="M0,'+(hz+10)+' Q'+(w*.3)+','+(hz-H*.14)+' '+(w*.6)+','+(hz+8)+' T'+w+','+(hz+4)+' L'+w+','+H+' L0,'+H+'Z" fill="#1a0f08"/><path d="M0,'+(hz+H*.14)+' Q'+(w*.4)+','+(hz-H*.02)+' '+w+','+(hz+H*.16)+' L'+w+','+H+' L0,'+H+'Z" fill="#0b0604"/>';
+ if(t==4){for(var k2=0;k2<14;k2++){var tx=rnd(s+k2*7)*w,th=H*(.18+rnd(k2+s)*.25);o+='<polygon points="'+tx+','+(H-th-H*.05)+' '+(tx-th*.28)+','+(H*.97)+' '+(tx+th*.28)+','+(H*.97)+'" fill="#06120a"/>'}}
+ if(t!=0)o+='<rect y="'+(H*.9)+'" width="'+w+'" height="'+(H*.1)+'" fill="#000" fill-opacity=".6"/>';
+ var px=w*(.3+.4*rnd(s+2)),r=p?58:34;o+='<ellipse cx="'+px+'" cy="'+(H*.99)+'" rx="'+(r*1.05)+'" ry="'+(r*1.25)+'" fill="#000" fill-opacity=".85"/><circle cx="'+px+'" cy="'+(H*.99-r*1.45)+'" r="'+(r*.42)+'" fill="#000" fill-opacity=".9"/>';
+ if(p)o+='<rect y="'+(H-100)+'" width="'+w+'" height="100" fill="#000" fill-opacity=".6"/><text x="'+(w/2)+'" y="'+(H-58)+'" font-family="Arial" font-weight="900" font-size="30" fill="#fff" text-anchor="middle">DEMO MOVIE</text><text x="'+(w/2)+'" y="'+(H-30)+'" font-family="Arial" font-size="15" fill="#ffd54a" text-anchor="middle">2026 \u2022 HD \u2022 HINDI</text><rect x="4" y="4" width="'+(w-8)+'" height="'+(H-8)+'" fill="none" stroke="#fff" stroke-opacity=".25"/>';
+ return 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+H+'">'+o+'</svg>')}
+var DEMO=[];for(var n=1;n<=12;n++)(function(n){var h=(n*47+350)%360;DEMO.push({id:"demo"+n,title:"Sample Movie "+n+" (2026) (Hindi) HD ESub",cat:CFG.cats[n%CFG.cats.length]||"",genre:"Action, Drama",dur:"2h 20min",date:"2026",lang:"Hindi",cast:"Actor Name",desc:"Ye demo movie hai.",watchOn:n<=2,watchUrl:"https://example.com",poster:fake(h,n,true),shots:[1,2,3,4,5,6,7,8].map(function(k){return fake(h,k+n,false)}),qualities:[["480p-HEVC","540Mb"],["720p-HEVC","880Mb"],["720p-HD","1.4Gb"],["1080p-HD","3.2Gb"],["1080p-WEB-DL","7.1Gb"],["2160p-WEB-DL","14.2Gb"]].map(function(x){return {label:x[0],size:x[1],url:"https://example.com"}})})})(n);
+function list(){return LOADED?(CFG.showDemo?MOVIES.concat(DEMO):MOVIES):[]}
+function ps(m){return m.poster&&img(m.poster)?'background-image:url(\''+img(m.poster)+'\')':'background:linear-gradient(135deg,#7a1f2b,#000)'}
+function pst(m,x){return '<div class="poster" style="'+ps(m)+(x||'')+'">'+(m.poster?'':esc(m.title.charAt(0)))+'</div>'}
+function item(m,i){var c=P[(i||0)%P.length];return '<div class="item" onclick="location.hash=\''+m.id+'\'">'+pst(m)+'<div><div class="t" style="color:'+c+'">'+esc(m.title)+'</div><span class="tag" style="background:'+c+'">'+esc(m.cat)+'</span></div></div>'}
+function home(){
+ var q=document.getElementById('q').value.toLowerCase().trim(),PER=+CFG.perPage||10;
+ var L=list().filter(function(m){return (!cat||m.cat===cat)&&(!q||m.title.toLowerCase().indexOf(q)>-1)}),tot=Math.max(1,Math.ceil(L.length/PER));if(page>tot)page=1;
+ var h='';if(CFG.showTags)h+='<div class="box"><h2 style="margin:0 0 6px;text-align:center;font-size:22px">'+esc(CFG.name)+' - '+esc(CFG.heading)+'</h2><p style="margin:0;color:var(--mut)">'+esc(CFG.tags)+'</p></div>';
+ h+='<div class="h">🔥 '+(cat?esc(cat):(q?'Search Results':'Latest Movies'))+' 🔥</div>'+(L.length?L.slice((page-1)*PER,page*PER).map(item).join(''):'<div class="empty">Koi movie nahi mili.</div>');
+ if(tot>1)h+='<div class="pg">'+(page>1?'<button class="btn" onclick="page--;route();scrollTo(0,0)">'+esc(CFG.prev)+'</button>':'')+(page<tot?'<button class="btn" onclick="page++;route();scrollTo(0,0)">'+esc(CFG.next)+'</button>':'')+'</div>';
+ if(CFG.showCats)h+='<div class="h">Select Category</div><div class="cats">'+CFG.cats.map(function(c,i){return '<a onclick="cat=CFG.cats['+i+'];page=1;route();scrollTo(0,0)">'+esc(c)+'</a>'}).join('')+'<a onclick="cat=null;page=1;route()">All Movies</a></div>';
+ return h}
+function detail(m){
+ var h='<div class="crumb"><a onclick="location.hash=\'home\'">Home</a> » '+esc(m.cat)+' » '+esc(m.title)+'</div><div style="margin:0 8px">'+pst(m,';width:100%;height:240px;border-radius:0;font-size:80px')+'</div><div class="h">👉 File Info 👈</div><div class="info">';
+ [["Name",m.title,"#a32020"],["Genre",m.genre,"#b85c00"],["Duration",m.dur,"#0f7d2e"],["Release Date",m.date,"#1648c8"],["Language",m.lang,"#007a75"],["Starcast",m.cast,"#a32020"],["Size",(m.qualities||[]).map(function(q){return q.size}).filter(Boolean).join(" ")+" HD","#7a2bd6"],["Description",m.desc,"#7a2bd6"]].forEach(function(r){h+='<div><b>'+r[0]+':</b> <span style="color:'+r[2]+'">'+esc(r[1])+'</span></div>'});
+ h+='</div><div class="hb">DOWNLOAD THIS MOVIE</div><div style="background:var(--card);padding:6px 0">'+(m.qualities||[]).map(function(q,i){return '<a class="dl" style="background:'+COL[i%6]+'" href="'+esc(safe(q.url))+'" target="_blank" rel="noopener" onclick="stat(\''+m.id+'\',\'d\')">'+esc(CFG.dlText)+' '+esc(q.size?q.size+' {'+q.label+'}':q.label)+'</a>'}).join('')+watch(m)+'</div>';
+ if((m.shots||[]).length)h+='<div class="hb">SCREENSHOT</div><div class="shots">'+m.shots.map(function(s,k){var sp=(m.shots.length%2&&k==m.shots.length-1)?';grid-column:1/-1':'';return '<div class="shot" style="background-image:url(\''+img(s)+'\')'+sp+'"></div>'}).join('')+'</div>';
+ var rel=list().filter(function(x){return x.id!==m.id}).slice(0,5);if(rel.length)h+='<div class="hb">RELATED MOVIES</div>'+rel.map(item).join('');
+ return h}
+function embedOf(u){var m;if(m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/))return {t:'f',s:'https://www.youtube.com/embed/'+m[1]};if(m=u.match(/drive\.google\.com\/file\/d\/([\w-]+)/))return {t:'f',s:'https://drive.google.com/file/d/'+m[1]+'/preview'};if(/\.(mp4|webm|ogg)(\?|$)/i.test(u))return {t:'v',s:u};return null}
+function watch(m){if(!m.watchOn||!m.watchUrl)return '';var u=esc(safe(m.watchUrl)),e=embedOf(m.watchUrl),p='';
+ if(e)p='<div style="margin:12px 8px 0;background:#000;border-radius:8px;overflow:hidden">'+(e.t==='v'?'<video controls playsinline preload="metadata" style="width:100%;display:block" src="'+esc(e.s)+'"></video>':'<iframe src="'+esc(e.s)+'" style="width:100%;aspect-ratio:16/9;border:0;display:block" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>')+'</div>';
+ return '<div style="text-align:center;font-weight:700;color:var(--mut);margin:18px 8px 2px">━━ ya seedha video dekho ━━</div>'+p+'<a class="dl watch" href="'+u+'" target="_blank" rel="noopener" onclick="stat(\''+m.id+'\',\'w\')">'+esc(CFG.watchText)+'</a>'}
+function route(){var id=location.hash.replace('#',''),m=list().filter(function(x){return x.id===id})[0];document.getElementById('app').innerHTML=m?detail(m):home()}
+function applyCfg(){document.title=CFG.name;document.getElementById('ban').style.background='linear-gradient(120deg,'+CFG.c1+','+CFG.c2+')';
+document.getElementById('sn').textContent=CFG.name;document.getElementById('tl').textContent=CFG.tagline;
+document.querySelector('.search').style.display=CFG.showSearch?'flex':'none';
+document.getElementById('ft').innerHTML='<a onclick="location.hash=\'home\'">Home</a>'+CFG.footer.split('\n').filter(Boolean).map(function(l){var p=l.split('|');return '|<a'+(p[1]?' href="'+esc(safe(p[1]))+'" target="_blank"':'')+'>'+esc(p[0])+'</a>'}).join('')+'<br>© 2026 '+esc(CFG.name)+'. Sab adhikar surakshit.<br><small>Bina ijazat is site ki copy karna kanooni apradh hai.</small>';}
+applyCfg();
+var fdb=null;
+function stat(id,k){if(!fdb||!MOVIES.some(function(x){return x.id===id}))return;try{var u={};u[k]=firebase.firestore.FieldValue.increment(1);fdb.collection('stats').doc(id).set(u,{merge:true}).catch(function(){})}catch(e){}}
+function track(){var id=location.hash.replace('#','');if(id)stat(id,'v')}
+document.addEventListener('contextmenu',function(e){e.preventDefault()});
+document.addEventListener('dragstart',function(e){e.preventDefault()});
+document.addEventListener('copy',function(e){var t=(document.activeElement||{}).tagName;if(t!=='INPUT'&&t!=='TEXTAREA')e.preventDefault()});
+document.addEventListener('keydown',function(e){var k=(e.key||'').toLowerCase();if(e.key==='F12'||(e.ctrlKey&&['u','s','p'].indexOf(k)>-1)||(e.ctrlKey&&e.shiftKey&&['i','j','c'].indexOf(k)>-1))e.preventDefault()});
+addEventListener('hashchange',function(){route();scrollTo(0,0);track()});
+try{firebase.initializeApp(window.FB_CONFIG);fdb=firebase.firestore()}catch(e){}
+Promise.all([fdb?fdb.collection('meta').doc('config').get().then(function(d){return d.exists?d.data():{}}).catch(function(){return {}}):{},fdb?fdb.collection('movies').where('hidden','==',false).get().then(function(s){var a=[];s.forEach(function(d){var m=d.data();m.id=d.id;a.push(m)});a.sort(function(x,y){return (y.createdAt||0)-(x.createdAt||0)});return a}).catch(function(){return []}):[]]).then(function(a){CFG=Object.assign({},DEF,a[0]);MOVIES=Array.isArray(a[1])?a[1]:[];LOADED=true;applyCfg();route();track()});
+</script></body></html>
