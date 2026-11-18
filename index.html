@@ -56,7 +56,7 @@ function fake(h,s,p){var w=p?300:320,H=p?420:180,t=s%5,hu=(h+s*23)%360,o='';
  if(p)o+='<rect y="'+(H-100)+'" width="'+w+'" height="100" fill="#000" fill-opacity=".6"/><text x="'+(w/2)+'" y="'+(H-58)+'" font-family="Arial" font-weight="900" font-size="30" fill="#fff" text-anchor="middle">DEMO MOVIE</text><text x="'+(w/2)+'" y="'+(H-30)+'" font-family="Arial" font-size="15" fill="#ffd54a" text-anchor="middle">2026 \u2022 HD \u2022 HINDI</text><rect x="4" y="4" width="'+(w-8)+'" height="'+(H-8)+'" fill="none" stroke="#fff" stroke-opacity=".25"/>';
  return 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+H+'">'+o+'</svg>')}
 var DEMO=[];for(var n=1;n<=12;n++)(function(n){var h=(n*47+350)%360;DEMO.push({id:"demo"+n,title:"Sample Movie "+n+" (2026) (Hindi) HD ESub",cat:CFG.cats[n%CFG.cats.length]||"",genre:"Action, Drama",dur:"2h 20min",date:"2026",lang:"Hindi",cast:"Actor Name",desc:"Ye demo movie hai.",watchOn:n<=2,watchUrl:"https://example.com",poster:fake(h,n,true),shots:[1,2,3,4,5,6,7,8].map(function(k){return fake(h,k+n,false)}),qualities:[["480p-HEVC","540Mb"],["720p-HEVC","880Mb"],["720p-HD","1.4Gb"],["1080p-HD","3.2Gb"],["1080p-WEB-DL","7.1Gb"],["2160p-WEB-DL","14.2Gb"]].map(function(x){return {label:x[0],size:x[1],url:"https://example.com"}})})})(n);
-function list(){return LOADED?(CFG.showDemo?MOVIES.concat(DEMO):MOVIES):[]}
+function list(){return LOADED?MOVIES:[]}
 function ps(m){return m.poster&&img(m.poster)?'background-image:url(\''+img(m.poster)+'\')':'background:linear-gradient(135deg,#7a1f2b,#000)'}
 function pst(m,x){return '<div class="poster" style="'+ps(m)+(x||'')+'">'+(m.poster?'':esc(m.title.charAt(0)))+'</div>'}
 function item(m,i){var c=P[(i||0)%P.length];return '<div class="item" onclick="location.hash=\''+m.id+'\'">'+pst(m)+'<div><div class="t" style="color:'+c+'">'+esc(m.title)+'</div><span class="tag" style="background:'+c+'">'+esc(m.cat)+'</span></div></div>'}
@@ -64,7 +64,7 @@ function home(){
  var q=document.getElementById('q').value.toLowerCase().trim(),PER=+CFG.perPage||10;
  var L=list().filter(function(m){return (!cat||m.cat===cat)&&(!q||m.title.toLowerCase().indexOf(q)>-1)}),tot=Math.max(1,Math.ceil(L.length/PER));if(page>tot)page=1;
  var h='';if(CFG.showTags)h+='<div class="box"><h2 style="margin:0 0 6px;text-align:center;font-size:22px">'+esc(CFG.name)+' - '+esc(CFG.heading)+'</h2><p style="margin:0;color:var(--mut)">'+esc(CFG.tags)+'</p></div>';
- h+='<div class="h">🔥 '+(cat?esc(cat):(q?'Search Results':'Latest Movies'))+' 🔥</div>'+(L.length?L.slice((page-1)*PER,page*PER).map(item).join(''):'<div class="empty">Koi movie nahi mili.</div>');
+ h+='<div class="h">🔥 '+(cat?esc(cat):(q?'Search Results':'Latest Movies'))+' 🔥</div>'+(L.length?L.slice((page-1)*PER,page*PER).map(item).join(''):'<div class="empty">Abhi koi movie nahi hai.</div>');
  if(tot>1)h+='<div class="pg">'+(page>1?'<button class="btn" onclick="page--;route();scrollTo(0,0)">'+esc(CFG.prev)+'</button>':'')+(page<tot?'<button class="btn" onclick="page++;route();scrollTo(0,0)">'+esc(CFG.next)+'</button>':'')+'</div>';
  if(CFG.showCats)h+='<div class="h">Select Category</div><div class="cats">'+CFG.cats.map(function(c,i){return '<a onclick="cat=CFG.cats['+i+'];page=1;route();scrollTo(0,0)">'+esc(c)+'</a>'}).join('')+'<a onclick="cat=null;page=1;route()">All Movies</a></div>';
  return h}
